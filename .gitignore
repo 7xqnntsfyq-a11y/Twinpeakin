@@ -6,3 +6,8 @@ dist
 .DS_Store
 .vscode
 .idea
+
+# Capacitor
+.capacitor/
+ios/App/Pods/
+ios/App/public/

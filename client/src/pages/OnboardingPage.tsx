@@ -250,7 +250,6 @@ export default function OnboardingPage() {
 
   const totalQuestions = MBTI_QUESTIONS.length;
   const answeredCount = Object.keys(responses).length;
-  const progress = (answeredCount / totalQuestions) * 100;
 
   const estimatedMinutesRemaining = Math.ceil((totalQuestions - answeredCount) * 0.25);
 
