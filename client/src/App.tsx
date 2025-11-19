@@ -5,6 +5,8 @@ import { Toaster } from "sonner";
 import LoginPage from "./pages/LoginPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import ChatPage from "./pages/ChatPage";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import CheckoutCancel from "./pages/CheckoutCancel";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +58,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Switch>
         <Route path="/" component={LoginPage} />
+        <Route path="/checkout/success" component={CheckoutSuccess} />
+        <Route path="/checkout/cancel" component={CheckoutCancel} />
         {isAuthenticated && (
           <>
             <Route path="/onboarding" component={OnboardingPage} />
