@@ -8,15 +8,35 @@ The application is built as a full-stack TypeScript application with React front
 
 ## Recent Changes
 
+**November 19, 2025 - iOS Deployment Setup with Capacitor:**
+- Installed Capacitor v7 packages (@capacitor/core, @capacitor/cli, @capacitor/ios, @capacitor/app)
+- Created capacitor.config.ts with iOS configuration (appId: com.connorbelanger.twinpeakin)
+- Added Capacitor npm scripts: cap:sync, cap:build, cap:open:ios
+- Created comprehensive IOS_DEPLOYMENT.md documentation with EAS and local Xcode instructions
+- Updated .gitignore to exclude Capacitor build artifacts
+- Ready for iOS App Store deployment via Expo Application Services (EAS) or local Xcode builds
+
+**November 19, 2025 - User-Friendly Onboarding Redesign:**
+- Completely redesigned onboarding flow with 5 steps: welcome → questions → midway → review → results
+- Replaced text areas with beautiful clickable card selectors featuring icons and descriptions
+- Added welcome screen explaining dual AI personalities and setting expectations
+- Added dimension headers and explanations for each MBTI category (Energy Source, Information Processing, etc.)
+- Implemented mid-flow celebration at question 6 with progress summary
+- Added review screen allowing users to see and edit all answers before submission
+- Enhanced results screen with celebration animation and detailed personality card display
+- Improved progress indicators with question count, time estimates, and dimension badges
+- Used Framer Motion for smooth animations and transitions throughout
+
 **November 19, 2025 - Stripe Subscription System with Free and Pro Tiers:**
 - Added Stripe payment integration via Replit Connector for subscription management
-- Created database schema with Stripe fields (stripeCustomerId, stripeSubscriptionId, subscriptionTier)
-- Implemented Free tier (limited MBTI info) and Pro tier ($10.99/month for full Myers-Briggs insights)
-- Created Stripe integration files: stripeClient, stripeService, storage, webhookHandlers
-- Added subscription API endpoints (/status, /checkout, /portal) with feature gating middleware
-- Created Stripe Pro product and recurring price ($10.99/month)
-- Stripe webhook handler processes subscription events and updates user tier automatically
-- Feature gating applied: Free users see labels only, Pro users get full MBTI insights and archetypes
+- Database schema already includes Stripe fields (stripeCustomerId, stripeSubscriptionId, subscriptionTier)
+- Implemented Free tier (MBTI codes only) and Pro tier ($10.99/month for full Myers-Briggs insights)
+- Stripe integration files complete: stripeClient, stripeService, storage, webhookHandlers
+- Subscription API endpoints working: /status, /checkout, /portal with feature gating
+- Created STRIPE_SETUP.md documentation for product creation and configuration
+- Profile endpoint now filters MBTI data based on subscription tier automatically
+- Feature gating applied: Free users see type codes only, Pro users get full insights, labels, and archetypes
+- Created requirePro middleware for protecting Pro-only endpoints
 
 **November 19, 2025 - ChatGPT-Style Interface & OpenAI Integration:**
 - Integrated OpenAI via Replit AI Integrations (using gpt-5 model) with Server-Sent Events (SSE) streaming for real-time chat responses
