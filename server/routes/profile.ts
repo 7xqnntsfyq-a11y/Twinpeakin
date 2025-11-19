@@ -1,9 +1,10 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db/index";
-import { userProfiles } from "../db/schema";
+import { userProfiles, users } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { MBTIDetector } from "../services/mbti-detector";
 import { TwinPeakingConfig } from "../config/twinpeaking";
+import { SubscriptionTiers } from "../config/subscriptionTiers";
 
 const router = Router();
 
@@ -26,7 +27,48 @@ router.get("/", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Profile not found" });
     }
 
-    res.json({ profile: profile[0] });
+    // Get user's subscription tier
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.user!.id))
+      .limit(1);
+
+    const tier = user?.subscriptionTier || 'free';
+    const tierFeatures = SubscriptionTiers[tier as keyof typeof SubscriptionTiers];
+
+    // Filter profile data based on subscription tier
+    const fullProfile = profile[0];
+    const restrictedProfile: any = {
+      id: fullProfile.id,
+      userId: fullProfile.userId,
+      onboardingComplete: fullProfile.onboardingComplete,
+      updatedAt: fullProfile.updatedAt,
+    };
+
+    // Free tier: Only show MBTI type codes (4 letters)
+    if (tierFeatures.features.mbtiBasicInfo) {
+      restrictedProfile.coreMbti = fullProfile.coreMbti;
+      restrictedProfile.fieldMbti = fullProfile.fieldMbti;
+    }
+
+    // Pro tier: Show full insights and labels
+    if (tierFeatures.features.mbtiFullInsights) {
+      restrictedProfile.coreSelfLabel = fullProfile.coreSelfLabel;
+      restrictedProfile.fieldSelfLabel = fullProfile.fieldSelfLabel;
+    }
+
+    // Pro tier: Show archetype information
+    if (tierFeatures.features.mbtiArchetypes) {
+      restrictedProfile.tonePrefs = fullProfile.tonePrefs;
+      restrictedProfile.learnedPatterns = fullProfile.learnedPatterns;
+    }
+
+    res.json({ 
+      profile: restrictedProfile,
+      subscriptionTier: tier,
+      features: tierFeatures.features
+    });
   } catch (error) {
     console.error("Profile fetch error:", error);
     res.status(500).json({ error: "Failed to fetch profile" });
