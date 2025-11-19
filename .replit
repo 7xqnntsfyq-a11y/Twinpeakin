@@ -34,6 +34,18 @@ task = "shell.exec"
 args = "npm run server & npm run dev"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "Capacitor iOS Build"
+mode = "sequential"
+author = 49911750
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Capacitor iOS Build"
+
 [[ports]]
 localPort = 80
 externalPort = 80
@@ -45,10 +57,6 @@ externalPort = 3000
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 39637
-externalPort = 3001
 
 [agent]
 expertMode = true
