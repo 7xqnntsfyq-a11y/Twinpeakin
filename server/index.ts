@@ -120,6 +120,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       if (user) {
         const { storage } = await import('./stripe/storage');
         await storage.updateUserStripeInfo(user.id, {
+          stripeSubscriptionId: null,
           subscriptionTier: 'free',
         });
         console.log(`✓ Downgraded user ${user.id} to free tier`);
