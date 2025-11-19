@@ -56,31 +56,91 @@ export default function ChatPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const userInput = input;
     setInput("");
 
+    const aiMessageId = (Date.now() + 1).toString();
+    let aiMode: ModeType = "core";
+
     try {
-      const classifyRes = await fetch("/api/chat/classify", {
+      const response = await fetch("/api/chat/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ 
+          message: userInput,
+          userProfile: {
+            coreSelfLabel: profile?.coreSelfLabel,
+            fieldSelfLabel: profile?.fieldSelfLabel,
+          }
+        }),
       });
 
-      if (classifyRes.ok) {
-        const { mode, config } = await classifyRes.json();
-        
-        const modeLabel = mode === "core" ? profile?.coreSelfLabel || "Inner Self" : profile?.fieldSelfLabel || "Field Alpha";
-        
-        const systemMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: `[${modeLabel}] Analyzing with ${config.voice.tone} voice. This is a simulated response. In production, this would connect to an AI service with mode-specific prompting based on: ${config.voice.styleRules.join(", ")}`,
-          sender: "system",
-          mode,
-          timestamp: new Date(),
-        };
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
 
-        setMessages((prev) => [...prev, systemMessage]);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("No response stream");
+      }
+
+      let buffer = "";
+      let aiText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = JSON.parse(line.substring(6));
+
+            if (data.type === "mode") {
+              aiMode = data.mode;
+              const modeLabel = data.mode === "core" 
+                ? profile?.coreSelfLabel || "Inner Self" 
+                : profile?.fieldSelfLabel || "Field Alpha";
+              
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: aiMessageId,
+                  text: `[${modeLabel}] `,
+                  sender: "system",
+                  mode: data.mode,
+                  timestamp: new Date(),
+                },
+              ]);
+            } else if (data.type === "content") {
+              aiText += data.content;
+              setMessages((prev) => {
+                const existing = prev.find((m) => m.id === aiMessageId);
+                if (existing) {
+                  const modeLabel = aiMode === "core" 
+                    ? profile?.coreSelfLabel || "Inner Self" 
+                    : profile?.fieldSelfLabel || "Field Alpha";
+                  return prev.map((m) =>
+                    m.id === aiMessageId
+                      ? { ...m, text: `[${modeLabel}]\n\n${aiText}` }
+                      : m
+                  );
+                }
+                return prev;
+              });
+            } else if (data.type === "error") {
+              toast.error(data.error || "Failed to generate response");
+            }
+          }
+        }
       }
     } catch (error) {
+      console.error("Chat error:", error);
       toast.error("Failed to process message");
     }
   };
