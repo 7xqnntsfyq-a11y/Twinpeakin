@@ -8,6 +8,16 @@ The application is built as a full-stack TypeScript application with React front
 
 ## Recent Changes
 
+**November 19, 2025 - Stripe Subscription System with Free and Pro Tiers:**
+- Added Stripe payment integration via Replit Connector for subscription management
+- Created database schema with Stripe fields (stripeCustomerId, stripeSubscriptionId, subscriptionTier)
+- Implemented Free tier (limited MBTI info) and Pro tier ($10.99/month for full Myers-Briggs insights)
+- Created Stripe integration files: stripeClient, stripeService, storage, webhookHandlers
+- Added subscription API endpoints (/status, /checkout, /portal) with feature gating middleware
+- Created Stripe Pro product and recurring price ($10.99/month)
+- Stripe webhook handler processes subscription events and updates user tier automatically
+- Feature gating applied: Free users see labels only, Pro users get full MBTI insights and archetypes
+
 **November 19, 2025 - ChatGPT-Style Interface & OpenAI Integration:**
 - Integrated OpenAI via Replit AI Integrations (using gpt-5 model) with Server-Sent Events (SSE) streaming for real-time chat responses
 - Created comprehensive database schema: `conversations`, `messages`, `user_preferences` tables for chat history and analytics
