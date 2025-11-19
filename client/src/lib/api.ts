@@ -3,11 +3,10 @@ export async function getSubscriptionStatus() {
   return await response.json();
 }
 
-export async function createCheckoutSession(priceId: string) {
+export async function createCheckoutSession() {
   const response = await fetch('/api/subscription/checkout', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ priceId }),
     credentials: 'include'
   });
   return await response.json();

@@ -46,10 +46,9 @@ router.post('/checkout', async (req: any, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const { priceId } = req.body;
-    if (!priceId) {
-      return res.status(400).json({ error: "Price ID is required" });
-    }
+    // SECURITY: Always use server-side Pro price ID - never trust client input
+    const { StripeConfig } = await import('../config/stripe');
+    const priceId = StripeConfig.products.pro.priceId;
 
     let customerId = user.stripeCustomerId;
     if (!customerId) {
