@@ -33,7 +33,40 @@ export const telemetry = pgTable("telemetry", {
   lastIncrement: timestamp("last_increment").defaultNow().notNull(),
 });
 
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isArchived: boolean("is_archived").default(false).notNull(),
+});
+
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => conversations.id),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  mode: text("mode").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  theme: text("theme").default("dark"),
+  sidebarCollapsed: boolean("sidebar_collapsed").default(false).notNull(),
+  customSettings: jsonb("custom_settings").$type<Record<string, any>>(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type NewUserProfile = typeof userProfiles.$inferInsert;
+export type Conversation = typeof conversations.$inferSelect;
+export type NewConversation = typeof conversations.$inferInsert;
+export type Message = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;
+export type UserPreference = typeof userPreferences.$inferSelect;
+export type NewUserPreference = typeof userPreferences.$inferInsert;
