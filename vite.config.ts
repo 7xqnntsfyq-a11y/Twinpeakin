@@ -1,16 +1,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import devBanner from "@replit/vite-plugin-dev-banner";
-import runtimeErrorModal from "@replit/vite-plugin-runtime-error-modal";
 import path from "path";
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    devBanner(),
-    runtimeErrorModal(),
   ],
   resolve: {
     alias: {
