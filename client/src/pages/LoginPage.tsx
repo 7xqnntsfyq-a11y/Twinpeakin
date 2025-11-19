@@ -23,7 +23,7 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        await res.json();
         toast.success(isLogin ? "Welcome back!" : "Account created!");
         
         if (!isLogin) {

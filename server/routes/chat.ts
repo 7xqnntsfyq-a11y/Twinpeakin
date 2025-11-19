@@ -1,12 +1,12 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { ModeClassifier } from "../services/mode-classifier";
 import { TwinPeakingConfig } from "../config/twinpeaking";
 
 const router = Router();
 const classifiers = new Map<number, ModeClassifier>();
 
-function requireAuth(req: any, res: any, next: any) {
-  if (req.isAuthenticated()) {
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated() && req.user) {
     return next();
   }
   res.status(401).json({ error: "Not authenticated" });
@@ -22,7 +22,7 @@ function getClassifier(userId: number): ModeClassifier {
 router.post("/classify", requireAuth, (req, res) => {
   try {
     const { message } = req.body;
-    const classifier = getClassifier(req.user.id);
+    const classifier = getClassifier(req.user!.id);
     const mode = classifier.classifyMessage(message);
     const modeConfig = TwinPeakingConfig.modes[mode];
 
@@ -39,7 +39,7 @@ router.post("/classify", requireAuth, (req, res) => {
 router.post("/set-mode", requireAuth, (req, res) => {
   try {
     const { mode, duration } = req.body;
-    const classifier = getClassifier(req.user.id);
+    const classifier = getClassifier(req.user!.id);
     classifier.setManualOverride(mode, duration);
 
     res.json({ success: true, mode });
@@ -51,7 +51,7 @@ router.post("/set-mode", requireAuth, (req, res) => {
 
 router.post("/clear-mode", requireAuth, (req, res) => {
   try {
-    const classifier = getClassifier(req.user.id);
+    const classifier = getClassifier(req.user!.id);
     classifier.clearManualOverride();
 
     res.json({ success: true });
@@ -63,7 +63,7 @@ router.post("/clear-mode", requireAuth, (req, res) => {
 
 router.get("/mode", requireAuth, (req, res) => {
   try {
-    const classifier = getClassifier(req.user.id);
+    const classifier = getClassifier(req.user!.id);
     const currentMode = classifier.getCurrentMode();
 
     res.json({ mode: currentMode });

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db/index";
 import { userProfiles } from "../db/schema";
 import { eq } from "drizzle-orm";
@@ -7,8 +7,8 @@ import { TwinPeakingConfig } from "../config/twinpeaking";
 
 const router = Router();
 
-function requireAuth(req: any, res: any, next: any) {
-  if (req.isAuthenticated()) {
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated() && req.user) {
     return next();
   }
   res.status(401).json({ error: "Not authenticated" });
@@ -19,7 +19,7 @@ router.get("/", requireAuth, async (req, res) => {
     const profile = await db
       .select()
       .from(userProfiles)
-      .where(eq(userProfiles.userId, req.user.id))
+      .where(eq(userProfiles.userId, req.user!.id))
       .limit(1);
 
     if (profile.length === 0) {
@@ -52,7 +52,7 @@ router.post("/complete-onboarding", requireAuth, async (req, res) => {
         onboardingComplete: true,
         updatedAt: new Date(),
       })
-      .where(eq(userProfiles.userId, req.user.id));
+      .where(eq(userProfiles.userId, req.user!.id));
 
     res.json({
       success: true,
@@ -79,7 +79,7 @@ router.post("/update", requireAuth, async (req, res) => {
         fieldSelfLabel,
         updatedAt: new Date(),
       })
-      .where(eq(userProfiles.userId, req.user.id));
+      .where(eq(userProfiles.userId, req.user!.id));
 
     res.json({ success: true });
   } catch (error) {

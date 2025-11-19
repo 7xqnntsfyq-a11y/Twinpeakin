@@ -49,6 +49,9 @@ router.post("/register", async (req, res) => {
 });
 
 router.post("/login", passport.authenticate("local"), (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Authentication failed" });
+  }
   res.json({ user: { id: req.user.id, username: req.user.username } });
 });
 
@@ -62,7 +65,7 @@ router.post("/logout", (req, res) => {
 });
 
 router.get("/me", (req, res) => {
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated() && req.user) {
     res.json({ user: { id: req.user.id, username: req.user.username } });
   } else {
     res.status(401).json({ error: "Not authenticated" });
