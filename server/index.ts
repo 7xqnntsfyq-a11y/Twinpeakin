@@ -7,13 +7,92 @@ import chatRoutes from "./routes/chat";
 import conversationsRoutes from "./routes/conversations";
 import preferencesRoutes from "./routes/preferences";
 import analyticsRoutes from "./routes/analytics";
+import subscriptionRoutes from "./routes/subscription";
 import { TelemetryService } from "./services/telemetry";
 import MemoryStore from "memorystore";
+import { runMigrations, StripeSync } from 'stripe-replit-sync';
+import { getStripeSecretKey, getStripeWebhookSecret } from './stripe/stripeClient';
+import { WebhookHandlers } from './stripe/webhookHandlers';
+
+async function initStripe() {
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (!databaseUrl) {
+    throw new Error(
+      'DATABASE_URL environment variable is required for Stripe integration. ' +
+      'Please create a PostgreSQL database first.'
+    );
+  }
+
+  try {
+    console.log('Initializing Stripe schema...');
+    await runMigrations({ 
+      databaseUrl,
+      schema: 'stripe'
+    });
+    console.log('Stripe schema ready');
+
+    console.log('Syncing Stripe data...');
+    const secretKey = await getStripeSecretKey();
+    const webhookSecret = await getStripeWebhookSecret();
+    
+    const stripeSync = new StripeSync({
+      poolConfig: {
+        connectionString: databaseUrl,
+        max: 10,
+      },
+      stripeSecretKey: secretKey,
+      stripeWebhookSecret: webhookSecret,
+    });
+    await stripeSync.syncBackfill();
+    console.log('Stripe data synced');
+  } catch (error) {
+    console.error('Failed to initialize Stripe:', error);
+    throw error;
+  }
+}
+
+await initStripe();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const MemoryStoreSession = MemoryStore(session);
+
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['stripe-signature'];
+  
+  if (!signature) {
+    return res.status(400).json({ error: 'Missing stripe-signature' });
+  }
+  
+  try {
+    const sig = Array.isArray(signature) ? signature[0] : signature;
+    
+    if (!Buffer.isBuffer(req.body)) {
+      const errorMsg = 'STRIPE WEBHOOK ERROR: req.body is not a Buffer. ' +
+        'This means express.json() ran before this webhook route. ' +
+        'FIX: Move this webhook route registration BEFORE app.use(express.json()) in your code.';
+      console.error(errorMsg);
+      return res.status(500).json({ error: 'Webhook processing error' });
+    }
+    
+    await WebhookHandlers.processWebhook(req.body as Buffer, sig);
+    
+    res.status(200).json({ received: true });
+  } catch (error: any) {
+    console.error('Webhook error:', error.message);
+    
+    if (error.message && error.message.includes('payload must be provided as a string or a Buffer')) {
+      const helpfulMsg = 'STRIPE WEBHOOK ERROR: Payload is not a Buffer. ' +
+        'This usually means express.json() parsed the body before the webhook handler. ' +
+        'FIX: Ensure the webhook route is registered BEFORE app.use(express.json()).';
+      console.error(helpfulMsg);
+    }
+    
+    res.status(400).json({ error: 'Webhook processing error' });
+  }
+});
 
 app.use(express.json());
 
@@ -42,6 +121,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/conversations", conversationsRoutes);
 app.use("/api/preferences", preferencesRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", version: "1.3" });

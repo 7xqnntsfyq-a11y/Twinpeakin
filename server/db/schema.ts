@@ -4,6 +4,9 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionTier: text("subscription_tier").default("free").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
