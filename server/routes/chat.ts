@@ -2,6 +2,9 @@ import { Router, Request, Response, NextFunction } from "express";
 import { ModeClassifier } from "../services/mode-classifier";
 import { TwinPeakingConfig } from "../config/twinpeaking";
 import { aiAssistant } from "../services/ai-assistant";
+import { db } from "../db/index";
+import { conversations, messages } from "../db/schema";
+import { eq, and } from "drizzle-orm";
 
 const router = Router();
 const classifiers = new Map<number, ModeClassifier>();
@@ -76,17 +79,49 @@ router.get("/mode", requireAuth, (req, res) => {
 
 router.post("/message", requireAuth, async (req, res) => {
   try {
-    const { message, userProfile } = req.body;
+    const { message, userProfile, conversationId } = req.body;
     const userId = req.user!.id;
     
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "Message is required" });
     }
 
+    if (conversationId !== undefined) {
+      const conversationIdNum = parseInt(conversationId);
+      if (isNaN(conversationIdNum)) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
+
+      const conversation = await db
+        .select()
+        .from(conversations)
+        .where(
+          and(
+            eq(conversations.id, conversationIdNum),
+            eq(conversations.userId, userId)
+          )
+        )
+        .limit(1);
+
+      if (conversation.length === 0) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+    }
+
     // Classify the message to determine the mode
     const classifier = getClassifier(userId);
     const mode = classifier.classifyMessage(message);
     const modeConfig = TwinPeakingConfig.modes[mode];
+
+    if (conversationId !== undefined) {
+      await db.insert(messages).values({
+        conversationId: parseInt(conversationId),
+        role: "user",
+        content: message,
+        mode,
+        createdAt: new Date(),
+      });
+    }
 
     // Set headers for streaming
     res.setHeader("Content-Type", "text/event-stream");
@@ -101,13 +136,31 @@ router.post("/message", requireAuth, async (req, res) => {
     const reader = stream.getReader();
     const decoder = new TextDecoder();
 
+    let fullResponse = "";
+
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const text = decoder.decode(value, { stream: true });
+        fullResponse += text;
         res.write(`data: ${JSON.stringify({ type: "content", content: text })}\n\n`);
+      }
+
+      if (conversationId !== undefined && fullResponse) {
+        await db.insert(messages).values({
+          conversationId: parseInt(conversationId),
+          role: "assistant",
+          content: fullResponse,
+          mode,
+          createdAt: new Date(),
+        });
+
+        await db
+          .update(conversations)
+          .set({ updatedAt: new Date() })
+          .where(eq(conversations.id, parseInt(conversationId)));
       }
 
       res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);

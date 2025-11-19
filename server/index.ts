@@ -4,6 +4,9 @@ import passport from "./auth/passport-config";
 import authRoutes from "./routes/auth";
 import profileRoutes from "./routes/profile";
 import chatRoutes from "./routes/chat";
+import conversationsRoutes from "./routes/conversations";
+import preferencesRoutes from "./routes/preferences";
+import analyticsRoutes from "./routes/analytics";
 import { TelemetryService } from "./services/telemetry";
 import MemoryStore from "memorystore";
 
@@ -36,6 +39,9 @@ app.use(passport.session());
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/conversations", conversationsRoutes);
+app.use("/api/preferences", preferencesRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", version: "1.3" });

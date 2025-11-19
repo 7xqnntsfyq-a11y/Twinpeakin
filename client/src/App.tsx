@@ -44,8 +44,10 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading TwinPeakingOS...</div>
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="text-lg bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+          Loading Twinpeakin...
+        </div>
       </div>
     );
   }
