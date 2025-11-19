@@ -3,7 +3,6 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X, Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { createCheckoutSession } from "../lib/api";
-import { STRIPE_CONFIG } from "../config/stripe";
 
 interface UpgradePromptProps {
   isOpen: boolean;
@@ -16,7 +15,7 @@ export default function UpgradePrompt({ isOpen, onClose }: UpgradePromptProps) {
   const handleUpgrade = async () => {
     setIsLoading(true);
     try {
-      const data = await createCheckoutSession(STRIPE_CONFIG.proPriceId);
+      const data = await createCheckoutSession();
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -104,7 +103,7 @@ export default function UpgradePrompt({ isOpen, onClose }: UpgradePromptProps) {
                 <div>
                   <p className="text-gray-400 text-sm mb-1">Pro Subscription</p>
                   <p className="text-3xl font-bold text-white">
-                    ${STRIPE_CONFIG.proPrice}
+                    $10.99
                     <span className="text-lg text-gray-400 font-normal">/month</span>
                   </p>
                 </div>

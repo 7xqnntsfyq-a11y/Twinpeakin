@@ -3,7 +3,6 @@ import { XCircle, ArrowRight, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createCheckoutSession } from "../lib/api";
-import { STRIPE_CONFIG } from "../config/stripe";
 
 export default function CheckoutCancel() {
   const [, setLocation] = useLocation();
@@ -12,7 +11,7 @@ export default function CheckoutCancel() {
   const handleTryAgain = async () => {
     setIsLoading(true);
     try {
-      const data = await createCheckoutSession(STRIPE_CONFIG.proPriceId);
+      const data = await createCheckoutSession();
       if (data.url) {
         window.location.href = data.url;
       } else {

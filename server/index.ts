@@ -11,8 +11,9 @@ import subscriptionRoutes from "./routes/subscription";
 import { TelemetryService } from "./services/telemetry";
 import MemoryStore from "memorystore";
 import { runMigrations, StripeSync } from 'stripe-replit-sync';
-import { getStripeSecretKey, getStripeWebhookSecret } from './stripe/stripeClient';
+import { getStripeSecretKey, getStripeWebhookSecret, getUncachableStripeClient } from './stripe/stripeClient';
 import { WebhookHandlers } from './stripe/webhookHandlers';
+import { db } from './db';
 
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -77,7 +78,53 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       return res.status(500).json({ error: 'Webhook processing error' });
     }
     
+    // Process webhook to sync data to database
     await WebhookHandlers.processWebhook(req.body as Buffer, sig);
+    
+    // Parse webhook event to update user subscription tier
+    const stripe = await getUncachableStripeClient();
+    const event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      await getStripeWebhookSecret()
+    );
+    
+    // Update user subscription tier based on event type
+    if (event.type === 'customer.subscription.created' || 
+        event.type === 'customer.subscription.updated') {
+      const subscription = event.data.object as any;
+      const customerId = subscription.customer as string;
+      const subscriptionId = subscription.id;
+      const status = subscription.status;
+      
+      // Find user by Stripe customer ID
+      const users = await db.select().from(require('./db/schema').users);
+      const user = users.find((u: any) => u.stripeCustomerId === customerId);
+      
+      if (user) {
+        const tier = (status === 'active' || status === 'trialing') ? 'pro' : 'free';
+        const { storage } = await import('./stripe/storage');
+        await storage.updateUserStripeInfo(user.id, {
+          stripeSubscriptionId: subscriptionId,
+          subscriptionTier: tier,
+        });
+        console.log(`✓ Updated user ${user.id} to tier: ${tier}`);
+      }
+    } else if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object as any;
+      const customerId = subscription.customer as string;
+      
+      const users = await db.select().from(require('./db/schema').users);
+      const user = users.find((u: any) => u.stripeCustomerId === customerId);
+      
+      if (user) {
+        const { storage } = await import('./stripe/storage');
+        await storage.updateUserStripeInfo(user.id, {
+          subscriptionTier: 'free',
+        });
+        console.log(`✓ Downgraded user ${user.id} to free tier`);
+      }
+    }
     
     res.status(200).json({ received: true });
   } catch (error: any) {
