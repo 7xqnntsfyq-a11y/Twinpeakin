@@ -37,18 +37,18 @@ app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/chat", chatRoutes);
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", version: "1.3" });
 });
 
-app.get("/api/config", (req, res) => {
+app.get("/api/config", (_req, res) => {
   res.json({
     mbtiQuestions: require("./config/twinpeaking").TwinPeakingConfig.mbtiQuestions,
     archetypes: require("./config/twinpeaking").TwinPeakingConfig.archetypes,
   });
 });
 
-app.get("/api/telemetry", async (req, res) => {
+app.get("/api/telemetry", async (_req, res) => {
   const count = await TelemetryService.getInstanceCount();
   res.json({ instanceCount: count });
 });

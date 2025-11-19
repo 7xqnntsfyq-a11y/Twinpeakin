@@ -10,19 +10,19 @@ const queryClient = new QueryClient();
 
 function App() {
   const [, setLocation] = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => {
         if (res.ok) {
-          setIsAuthenticated(true);
           return res.json();
         }
         throw new Error("Not authenticated");
       })
       .then(() => {
+        setIsAuthenticated(true);
         fetch("/api/profile")
           .then((res) => res.json())
           .then((data) => {
@@ -54,8 +54,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Switch>
         <Route path="/" component={LoginPage} />
-        <Route path="/onboarding" component={OnboardingPage} />
-        <Route path="/chat" component={ChatPage} />
+        {isAuthenticated && (
+          <>
+            <Route path="/onboarding" component={OnboardingPage} />
+            <Route path="/chat" component={ChatPage} />
+          </>
+        )}
       </Switch>
       <Toaster position="top-right" />
     </QueryClientProvider>
