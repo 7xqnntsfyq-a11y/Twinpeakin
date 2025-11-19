@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.connorbelanger.twinpeakin',
   appName: 'Twinpeakin',
   webDir: 'dist/public',
-  bundledWebRuntime: false,
   server: {
     androidScheme: 'https'
   }
