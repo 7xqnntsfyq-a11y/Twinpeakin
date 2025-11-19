@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { Crown } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import ChatWorkspace from "../components/ChatWorkspace";
 import SettingsPanel from "../components/SettingsPanel";
 import AnalyticsDashboard from "../components/AnalyticsDashboard";
+import UpgradePrompt from "../components/UpgradePrompt";
+import { getSubscriptionStatus } from "../lib/api";
 
 export default function ChatPage() {
   const [, setLocation] = useLocation();
@@ -14,10 +17,13 @@ export default function ChatPage() {
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [conversationRefreshTrigger, setConversationRefreshTrigger] = useState(0);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
+  const [upgradePromptOpen, setUpgradePromptOpen] = useState(false);
 
   useEffect(() => {
     loadProfile();
     loadPreferences();
+    loadSubscriptionStatus();
   }, []);
 
   const loadProfile = async () => {
@@ -40,6 +46,15 @@ export default function ChatPage() {
       setSidebarCollapsed(data.preferences.sidebarCollapsed || false);
     } catch (error) {
       console.error("Error loading preferences:", error);
+    }
+  };
+
+  const loadSubscriptionStatus = async () => {
+    try {
+      const data = await getSubscriptionStatus();
+      setSubscriptionStatus(data);
+    } catch (error) {
+      console.error("Error loading subscription status:", error);
     }
   };
 
@@ -80,6 +95,8 @@ export default function ChatPage() {
         activeConversationId={activeConversationId}
         onSelectConversation={handleSelectConversation}
         refreshTrigger={conversationRefreshTrigger}
+        subscriptionStatus={subscriptionStatus}
+        onOpenUpgrade={() => setUpgradePromptOpen(true)}
       />
 
       <div
@@ -100,6 +117,12 @@ export default function ChatPage() {
                 <span className="px-2 py-1 bg-blue-900/30 border border-blue-500/30 rounded text-blue-300">
                   {profile.fieldSelfLabel || "Field"}
                 </span>
+                {subscriptionStatus?.tier === "pro" && (
+                  <span className="px-2 py-1 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/50 rounded text-yellow-400 flex items-center gap-1">
+                    <Crown size={12} />
+                    Pro
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -131,6 +154,11 @@ export default function ChatPage() {
         isOpen={analyticsOpen}
         onClose={() => setAnalyticsOpen(false)}
         profile={profile}
+      />
+
+      <UpgradePrompt
+        isOpen={upgradePromptOpen}
+        onClose={() => setUpgradePromptOpen(false)}
       />
     </div>
   );

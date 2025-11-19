@@ -1,4 +1,4 @@
-import { MessageSquarePlus, BarChart3, Settings, Menu, X } from "lucide-react";
+import { MessageSquarePlus, BarChart3, Settings, Menu, X, Crown, Sparkles } from "lucide-react";
 import ConversationList from "./ConversationList";
 import { cn } from "../lib/utils";
 
@@ -11,6 +11,8 @@ interface SidebarProps {
   activeConversationId: number | null;
   onSelectConversation: (id: number) => void;
   refreshTrigger: number;
+  subscriptionStatus?: any;
+  onOpenUpgrade: () => void;
 }
 
 export default function Sidebar({
@@ -22,6 +24,8 @@ export default function Sidebar({
   activeConversationId,
   onSelectConversation,
   refreshTrigger,
+  subscriptionStatus,
+  onOpenUpgrade,
 }: SidebarProps) {
   return (
     <>
@@ -66,6 +70,27 @@ export default function Sidebar({
             </div>
 
             <div className="border-t border-blue-900/30 p-3 space-y-2">
+              {subscriptionStatus?.tier === "pro" ? (
+                <div className="px-4 py-3 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border border-yellow-500/30 rounded-lg">
+                  <div className="flex items-center gap-2 text-yellow-400">
+                    <Crown size={18} />
+                    <span className="font-semibold">Pro Member</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Full access to all features</p>
+                </div>
+              ) : (
+                <button
+                  onClick={onOpenUpgrade}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-yellow-600 to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white rounded-lg transition-all duration-200 shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/30"
+                >
+                  <Sparkles size={20} />
+                  <div className="flex-1 text-left">
+                    <div className="font-semibold">Upgrade to Pro</div>
+                    <div className="text-xs opacity-90">Unlock full insights</div>
+                  </div>
+                </button>
+              )}
+              
               <button
                 onClick={onOpenAnalytics}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-900/20 rounded-lg transition-colors text-gray-300 hover:text-blue-400"

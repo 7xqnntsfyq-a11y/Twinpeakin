@@ -23,7 +23,7 @@ task = "workflow.run"
 args = "Start application"
 
 [[workflows.workflow]]
-name = "Start application"
+name = "Start application "
 author = "agent"
 
 [workflows.workflow.metadata]
@@ -43,8 +43,7 @@ author = 49911750
 task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Capacitor iOS Build"
+task = "packager.installForAll"
 
 [[ports]]
 localPort = 80
